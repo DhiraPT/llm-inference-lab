@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Type checking
+.mypy_cache/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Models and data
+*.bin
+*.pt
+*.pth
+*.onnx
+datasets/
+models/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env

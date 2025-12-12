@@ -1,0 +1,13 @@
+[project]
+name = "llm-inference-lab"
+version = "0.1.0"
+description = "A hands-on journey from CPU baseline to optimized CUDA kernels."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.9.1",
+    "transformers>=4.57.3",
+    "huggingface_hub>=0.34.0,<1.0",
+    "accelerate>=1.12.0",
+    "numpy>=2.0.0",
+]
