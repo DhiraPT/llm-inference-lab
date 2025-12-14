@@ -21,12 +21,11 @@ env/
 .ipynb_checkpoints/
 
 # Models and data
+data/
 *.bin
 *.pt
 *.pth
 *.onnx
-datasets/
-models/
 
 # OS
 .DS_Store
