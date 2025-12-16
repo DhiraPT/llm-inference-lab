@@ -17,7 +17,7 @@ This lab uses a split architecture similar to production systems (vLLM/TGI):
 
 1.  **Data Organization**:
     - `data/tokenizers/`: JSON configs for Python text processing.
-    - `data/models/`: Binary flat files for C++ tensor math.
+    - `data/models/<model_name>/`: Contains `config.json` (architecture) and `model.fp16.bin` (weights).
 
 2.  **Runtime**:
     - **Python Frontend**: Handles text encoding/decoding using HuggingFace Tokenizers.
@@ -60,7 +60,10 @@ source .venv/bin/activate
 hf auth login
 
 # 4. Download & Setup Data
-# This creates data/tokenizers/meta-llama_Llama-3.1-8B/... and data/models/meta-llama_Llama-3.1-8B.fp16.bin
+# This creates:
+#   data/tokenizers/meta-llama_Llama-3.1-8B/
+#   data/models/meta-llama_Llama-3.1-8B/config.json
+#   data/models/meta-llama_Llama-3.1-8B/model.fp16.bin
 python common/download_model.py --model meta-llama/Llama-3.1-8B --precision fp16
 
 # 5. Build
@@ -70,16 +73,16 @@ cmake --build build --parallel $(nproc)
 # 6. Run CPU baseline
 # The Python wrapper handles tokenization, then calls the C++ binary.
 python common/inference.py \
-    --tokenizer_path data/tokenizers/meta-llama_Llama-3.1-8B \
-    --model_path data/models/meta-llama_Llama-3.1-8B.fp16.bin \
+    --tokenizer_dir data/tokenizers/meta-llama_Llama-3.1-8B \
+    --model_dir data/models/meta-llama_Llama-3.1-8B \
     --engine ./phase-1-cpu/inference \
     --prompt "The meaning of life is"
 
 # 7. Run GPU optimized
 # We use the same wrapper, but swap the engine to the GPU binary.
 python common/inference.py \
-    --tokenizer_path data/tokenizers/meta-llama_Llama-3.1-8B \
-    --model_path data/models/meta-llama_Llama-3.1-8B.fp16.bin \
+    --tokenizer_dir data/tokenizers/meta-llama_Llama-3.1-8B \
+    --model_dir data/models/meta-llama_Llama-3.1-8B \
     --engine ./phase-4-gpu-opt/inference \
     --prompt "The meaning of life is" \
     --max_tokens 128
