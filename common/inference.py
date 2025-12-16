@@ -5,20 +5,27 @@ import sys
 from transformers import AutoTokenizer
 
 
-def run_inference(tokenizer_path, model_path, engine_path, prompt, max_tokens):
-    # Validation
+def run_inference(engine_path, tokenizer_dir, model_dir, prompt, max_tokens, temperature=0.0):
     if not os.path.exists(engine_path):
         print(f"[Error] Engine not found: {engine_path}")
         print("Did you run 'cmake --build build'?")
         sys.exit(1)
-    if not os.path.exists(model_path):
-        print(f"[Error] Model not found: {model_path}")
+    if not os.path.isdir(tokenizer_dir):
+        print(f"[Error] Tokenizer directory not found: {tokenizer_dir}")
         sys.exit(1)
+    if not os.path.isdir(model_dir):
+        print(f"[Error] Model directory not found: {model_dir}")
+        sys.exit(1)
+    required_files = ["config.json", "model.bin"]
+    for f in required_files:
+        if not os.path.exists(os.path.join(model_dir, f)):
+            print(f"[Error] Missing {f} in model directory: {model_dir}")
+            sys.exit(1)
 
     # Tokenize (Python Side)
-    print(f"[Python] Loading tokenizer: {tokenizer_path}")
+    print(f"[Python] Loading tokenizer: {tokenizer_dir}")
     try:
-        tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir)
     except Exception as e:
         print(f"[Error] Failed to load tokenizer: {e}")
         sys.exit(1)
@@ -27,53 +34,74 @@ def run_inference(tokenizer_path, model_path, engine_path, prompt, max_tokens):
     input_str = " ".join(map(str, input_ids))
 
     print(f"[Python] Prompt: '{prompt}'")
-    print(f"[Python] Input IDs: {input_ids}")
-    print("-" * 40)
+    print(f"[Python] Input IDs ({len(input_ids)}): {input_ids}")
+    print("-" * 60)
+    print(f"[Python] Output Streaming:\n")
 
     # Execution (C++ Backend)
     cmd = [
         engine_path,
         "--model",
-        model_path,
+        model_dir,
         "--tokens",
         input_str,
         "--max_tokens",
         str(max_tokens),
+        "--temperature",
+        str(temperature),
     ]
 
+    # Run C++ binary
+    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=sys.stderr, text=True, bufsize=1)
+
+    output_ids = []
+
+    # Stream output tokens
     try:
-        # Run C++ binary
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        while True:
+            line = process.stdout.readline()
+            if not line and process.poll() is not None:
+                break
+            if line:
+                line = line.strip()
+                try:
+                    current_tokens = [int(x) for x in line.split()]
+                    output_ids.extend(current_tokens)
+                    text_chunk = tokenizer.decode(current_tokens, skip_special_tokens=True)
+                    print(text_chunk, end="", flush=True)
+                except ValueError:
+                    pass
+    except KeyboardInterrupt:
+        print("\n[Python] Interrupted by user.")
+        process.terminate()
+    finally:
+        process.stdout.close()
+        return_code = process.wait()
 
-        if result.stderr:
-            print(result.stderr, file=sys.stderr)
-
-        # Detokenize (Python Side)
-        raw_output = result.stdout.strip()
-        if raw_output:
-            try:
-                # Expecting space-separated integers from C++
-                output_ids = [int(x) for x in raw_output.split()]
-                decoded_text = tokenizer.decode(output_ids)
-                print(f"[Python] Output:\n{decoded_text}")
-            except ValueError:
-                print(f"[Python] Raw output from engine (parsing failed):\n{raw_output}")
-        else:
-            print("[Python] Warning: Engine returned no output.")
-
-    except subprocess.CalledProcessError as e:
-        print(f"\n[Error] Engine crashed (Exit Code {e.returncode})")
-        print(f"STDERR: {e.stderr}")
-        sys.exit(e.returncode)
+    print("\n" + "-" * 60)
+    if return_code != 0:
+        print(f"[Python] Engine exited with error code {return_code}")
+    else:
+        full_text = tokenizer.decode(output_ids, skip_special_tokens=True)
+        # print(f"\n[Python] Full Sequence:\n{full_text}")
+        print("[Python] Inference complete.")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--tokenizer_path", required=True)
-    parser.add_argument("--model_path", required=True)
     parser.add_argument("--engine", required=True)
-    parser.add_argument("--prompt", type=str, default="The meaning of life is")
+    parser.add_argument("--tokenizer_dir", required=True)
+    parser.add_argument("--model_dir", required=True)
+    parser.add_argument("--prompt", type=str, required=True)
     parser.add_argument("--max_tokens", type=int, default=32)
+    parser.add_argument("--temperature", type=float, default=0.0)
 
     args = parser.parse_args()
-    run_inference(args.tokenizer_path, args.model_path, args.engine, args.prompt, args.max_tokens)
+    run_inference(
+        args.engine,
+        args.tokenizer_dir,
+        args.model_dir,
+        args.prompt,
+        args.max_tokens,
+        args.temperature,
+    )

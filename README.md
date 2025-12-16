@@ -73,17 +73,17 @@ cmake --build build --parallel $(nproc)
 # 6. Run CPU baseline
 # The Python wrapper handles tokenization, then calls the C++ binary.
 python common/inference.py \
+    --engine ./phase-1-cpu/inference \
     --tokenizer_dir data/tokenizers/meta-llama_Llama-3.1-8B \
     --model_dir data/models/meta-llama_Llama-3.1-8B_fp16 \
-    --engine ./phase-1-cpu/inference \
     --prompt "The meaning of life is"
 
 # 7. Run GPU optimized
 # We use the same wrapper, but swap the engine to the GPU binary.
 python common/inference.py \
+    --engine ./phase-4-gpu-opt/inference \
     --tokenizer_dir data/tokenizers/meta-llama_Llama-3.1-8B \
     --model_dir data/models/meta-llama_Llama-3.1-8B_fp16 \
-    --engine ./phase-4-gpu-opt/inference \
     --prompt "The meaning of life is" \
     --max_tokens 128
 ```
