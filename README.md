@@ -41,7 +41,7 @@ This lab uses a split architecture similar to production systems (vLLM/TGI):
 
 - Linux (WSL2 supported)
 - GCC 11+ / Clang 14+
-- Make / CMake 3.10+
+- CMake 3.18+
 - CUDA Toolkit 12.0+
 - Python 3.10+
 - [uv](https://github.com/astral-sh/uv) v0.3.0+
@@ -64,7 +64,8 @@ huggingface-cli login
 python common/download_model.py --model meta-llama/Llama-3.1-8B --precision fp16
 
 # 5. Build
-make -j$(nproc)
+cmake -B build -S .
+cmake --build build --parallel $(nproc)
 
 # 6. Run CPU baseline
 # The Python wrapper handles tokenization, then calls the C++ binary.

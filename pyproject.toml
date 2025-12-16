@@ -10,3 +10,17 @@ dependencies = [
     "accelerate>=1.12.0",
     "numpy>=2.0.0",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.9",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+# Enable Pyflakes (F), pycodestyle (E, W), and isort (I)
+select = ["F", "E", "W", "I"]
+ignore = []

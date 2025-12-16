@@ -16,6 +16,7 @@ env/
 # Type checking
 .mypy_cache/
 .pytest_cache/
+.ruff_cache/
 
 # Jupyter
 .ipynb_checkpoints/
