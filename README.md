@@ -16,8 +16,8 @@ The base model is used to isolate inference mechanics from chat template complex
 This lab uses a split architecture similar to production systems (vLLM/TGI):
 
 1.  **Data Organization**:
-    - `data/tokenizers/`: JSON configs for Python text processing.
-    - `data/models/<model_name>/`: Contains `config.json` (architecture) and `model.fp16.bin` (weights).
+    - `data/tokenizers/<model_name>/`: Contains tokenizer vocabulary and configuration files.
+    - `data/models/<model_name>_<precision>/`: Contains `config.json` (architecture) and `model.bin` (weights).
 
 2.  **Runtime**:
     - **Python Frontend**: Handles text encoding/decoding using HuggingFace Tokenizers.
@@ -62,8 +62,8 @@ hf auth login
 # 4. Download & Setup Data
 # This creates:
 #   data/tokenizers/meta-llama_Llama-3.1-8B/
-#   data/models/meta-llama_Llama-3.1-8B/config.json
-#   data/models/meta-llama_Llama-3.1-8B/model.fp16.bin
+#   data/models/meta-llama_Llama-3.1-8B_fp16/config.json
+#   data/models/meta-llama_Llama-3.1-8B_fp16/model.bin
 python common/download_model.py --model meta-llama/Llama-3.1-8B --precision fp16
 
 # 5. Build
@@ -74,7 +74,7 @@ cmake --build build --parallel $(nproc)
 # The Python wrapper handles tokenization, then calls the C++ binary.
 python common/inference.py \
     --tokenizer_dir data/tokenizers/meta-llama_Llama-3.1-8B \
-    --model_dir data/models/meta-llama_Llama-3.1-8B \
+    --model_dir data/models/meta-llama_Llama-3.1-8B_fp16 \
     --engine ./phase-1-cpu/inference \
     --prompt "The meaning of life is"
 
@@ -82,7 +82,7 @@ python common/inference.py \
 # We use the same wrapper, but swap the engine to the GPU binary.
 python common/inference.py \
     --tokenizer_dir data/tokenizers/meta-llama_Llama-3.1-8B \
-    --model_dir data/models/meta-llama_Llama-3.1-8B \
+    --model_dir data/models/meta-llama_Llama-3.1-8B_fp16 \
     --engine ./phase-4-gpu-opt/inference \
     --prompt "The meaning of life is" \
     --max_tokens 128

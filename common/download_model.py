@@ -9,10 +9,10 @@ def export_model(model_id, data_dir, precision):
     safe_name = model_id.replace("/", "_")
 
     tokenizer_dir = os.path.join(data_dir, "tokenizers", safe_name)
-    model_dir = os.path.join(data_dir, "models", safe_name)
+    model_dir = os.path.join(data_dir, "models", f"{safe_name}_{precision}")
     os.makedirs(model_dir, exist_ok=True)
     config_output_path = os.path.join(model_dir, "config.json")
-    weights_output_path = os.path.join(model_dir, f"model.{precision}.bin")
+    weights_output_path = os.path.join(model_dir, "model.bin")
 
     print(f"--- Processing {model_id} ---")
 
@@ -28,6 +28,10 @@ def export_model(model_id, data_dir, precision):
     # Download and save config
     print(f"[Config] Saving config to: {config_output_path}")
     config = AutoConfig.from_pretrained(model_id)
+    if precision == "fp16":
+        config.torch_dtype = "float16"
+    elif precision == "fp32":
+        config.torch_dtype = "float32"
     config.save_pretrained(model_dir)
 
     # Download model weights and export to custom binary format
@@ -42,7 +46,7 @@ def export_model(model_id, data_dir, precision):
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         dtype=torch_dtype,
-        device_map="cpu",
+        device_map="auto",
     )
 
     state_dict = model.state_dict()
