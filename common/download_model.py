@@ -45,7 +45,7 @@ def export_model(model_id, data_dir, precision):
 
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
-        torch_dtype=torch_dtype,
+        dtype=torch_dtype,
         trust_remote_code=True,
         low_cpu_mem_usage=True,
         device_map="cpu",
