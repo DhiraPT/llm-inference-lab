@@ -57,7 +57,7 @@ uv sync
 source .venv/bin/activate
 
 # 3. Log in to Hugging Face (Required for Llama 3.1)
-huggingface-cli login
+hf auth login
 
 # 4. Download & Setup Data
 # This creates data/tokenizers/meta-llama_Llama-3.1-8B/... and data/models/meta-llama_Llama-3.1-8B.fp16.bin
