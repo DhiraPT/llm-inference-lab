@@ -55,6 +55,7 @@ def run_inference(engine_path, tokenizer_dir, model_dir, prompt, max_tokens, tem
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=sys.stderr, text=True, bufsize=1)
 
     output_ids = []
+    printed_len = 0
 
     # Stream output tokens
     try:
@@ -67,8 +68,13 @@ def run_inference(engine_path, tokenizer_dir, model_dir, prompt, max_tokens, tem
                 try:
                     current_tokens = [int(x) for x in line.split()]
                     output_ids.extend(current_tokens)
-                    text_chunk = tokenizer.decode(current_tokens, skip_special_tokens=True)
-                    print(text_chunk, end="", flush=True)
+                    full_text = tokenizer.decode(output_ids, skip_special_tokens=True)
+                    new_text_chunk = full_text[printed_len:]
+                    # Avoid printing incomplete characters
+                    if new_text_chunk.endswith("\ufffd"):
+                        continue
+                    print(new_text_chunk, end="", flush=True)
+                    printed_len = len(full_text)
                 except ValueError:
                     pass
     except KeyboardInterrupt:
