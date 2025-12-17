@@ -30,6 +30,8 @@ def export_model(model_id, data_dir, precision):
     config = AutoConfig.from_pretrained(model_id)
     if precision == "fp16":
         config.torch_dtype = "float16"
+    elif precision == "bf16":
+        config.torch_dtype = "bfloat16"
     elif precision == "fp32":
         config.torch_dtype = "float32"
     config.save_pretrained(model_dir)
@@ -41,7 +43,12 @@ def export_model(model_id, data_dir, precision):
 
     print(f"[Load] Loading model weights: {model_id}")
 
-    torch_dtype = torch.float16 if precision == "fp16" else torch.float32
+    if precision == "fp16":
+        torch_dtype = torch.float16
+    elif precision == "bf16":
+        torch_dtype = torch.bfloat16
+    else:
+        torch_dtype = torch.float32
 
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
@@ -56,7 +63,9 @@ def export_model(model_id, data_dir, precision):
         def write_tensor(tensor_name):
             if tensor_name not in state_dict:
                 raise ValueError(f"Missing tensor: {tensor_name}")
-            t = state_dict[tensor_name].to(dtype=torch_dtype)
+            t = state_dict[tensor_name].to(dtype=torch_dtype).cpu()
+            if "bfloat16" in str(torch_dtype):
+                t = t.view(torch.int16)
             f.write(t.detach().numpy().tobytes())
 
         # Embeddings
@@ -95,7 +104,11 @@ if __name__ == "__main__":
     )
     parser.add_argument("--data_dir", type=str, default="data", help="Base data directory")
     parser.add_argument(
-        "--precision", type=str, choices=["fp16", "fp32"], default="fp16", help="Target precision"
+        "--precision",
+        type=str,
+        choices=["fp16", "bf16", "fp32"],
+        default="fp16",
+        help="Target precision",
     )
 
     args = parser.parse_args()
