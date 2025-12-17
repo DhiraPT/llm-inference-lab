@@ -29,11 +29,11 @@ def export_model(model_id, data_dir, precision):
     print(f"[Config] Saving config to: {config_output_path}")
     config = AutoConfig.from_pretrained(model_id)
     if precision == "fp16":
-        config.torch_dtype = "float16"
+        config.dtype = "float16"
     elif precision == "bf16":
-        config.torch_dtype = "bfloat16"
+        config.dtype = "bfloat16"
     elif precision == "fp32":
-        config.torch_dtype = "float32"
+        config.dtype = "float32"
     config.save_pretrained(model_dir)
 
     # Download model weights and export to custom binary format
@@ -100,7 +100,10 @@ def export_model(model_id, data_dir, precision):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Prepare model data for llm-inference-lab.")
     parser.add_argument(
-        "--model", type=str, default="meta-llama/Llama-3.1-8B", help="HuggingFace model ID"
+        "--model",
+        type=str,
+        default="meta-llama/Llama-3.1-8B",
+        help="HuggingFace model ID",
     )
     parser.add_argument("--data_dir", type=str, default="data", help="Base data directory")
     parser.add_argument(
